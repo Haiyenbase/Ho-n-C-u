@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bộ chỉ tiêu theo phòng ban</title>
+  <style>
+    /* ====== Base styles (clean, modern, corporate) ====== */
+    :root{
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --muted: #6b7280; /* gray */
+      --accent: #0ea5e9; /* blue - fresh */
+      --accent-600: #0369a1;
+      --danger: #ef4444;
+      --success: #10b981;
+      --glass: rgba(14,165,233,0.06);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg),#ffffff);
+      color:#111827;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:32px;
+    }
+
+    .container{
+      max-width:1200px;
+      margin:0 auto;
+      padding:28px;
+      background:var(--card);
+      border-radius:14px;
+      box-shadow:0 12px 30px rgba(15,23,42,0.06);
+      position:relative;
+    }
+    .container::before{content:'';position:absolute;left:0;right:0;top:0;height:6px;border-top-left-radius:14px;border-top-right-radius:14px;background:linear-gradient(90deg,var(--accent),var(--accent-600));}
+
+    header{display:flex;justify-content:space-between;align-items:center;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand svg{width:46px;height:46px}
+    .title{display:flex;flex-direction:column}
+    h1{margin:0;font-size:1.25rem;letter-spacing:-0.2px}
+    p.lead{margin:0;color:var(--muted);font-size:0.95rem}
+
+    /* top controls */
+    .controls{display:flex;gap:8px;align-items:center}
+    .filter{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e5e7eb;padding:6px 10px;border-radius:10px}
+    .filter label{font-size:0.85rem;color:var(--muted)}
+    .filter select{border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;background:#fff}
+    button{background:linear-gradient(90deg,var(--accent),var(--accent-600));color:white;border:0;padding:8px 12px;border-radius:10px;cursor:pointer;transition:transform .12s ease, box-shadow .12s;box-shadow:0 6px 16px rgba(14,165,233,0.12)}
+    button.secondary{background:#f3f4f6;color:#111827;border:1px solid #e5e7eb}
+    button:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(37,99,235,0.12)}
+    button.secondary:hover{box-shadow:0 6px 12px rgba(15,23,42,0.04)}
+
+    main{margin-top:18px}
+
+    .top-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+    @media (max-width:980px){.top-cards{grid-template-columns:1fr}}
+    .metric-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;box-shadow:0 8px 18px rgba(15,23,42,0.04)}
+    .metric-title{font-weight:700;font-size:0.95rem;margin-bottom:6px}
+    .metric-value{font-size:1.6rem;font-weight:800;color:#0f172a}
+    .metric-sub{font-size:0.85rem;color:var(--muted)}
+
+
+    .compare-chart{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+    .compare-row{display:grid;grid-template-columns:140px 1fr 60px;gap:10px;align-items:center}
+    .compare-bar{height:12px;background:#eef2ff;border-radius:999px;overflow:hidden;border:1px solid rgba(8,12,20,0.05)}
+    .compare-bar span{display:block;height:100%;width:0%;background:var(--accent);transition:width .2s ease}
+
+    /* layout for groups: 3 columns on wide screens */
+    .groups{display:grid;grid-template-columns:1fr;gap:18px}
+
+    /* make groups more distinct and card-like */
+    .group{background:linear-gradient(180deg,#ffffff,#fbfdff);padding:16px;border-radius:14px;border:1px solid rgba(14,45,90,0.04);box-shadow:0 8px 20px rgba(15,23,42,0.03)}
+    .group h3{margin:0 0 6px 0;font-size:1.05rem}
+    .group .desc{font-size:0.88rem;color:var(--muted);margin-bottom:10px}
+    .group-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+    .group-total{display:flex;align-items:center;gap:8px;font-weight:700}
+    /* ensure totals do not show underline/strikethrough */
+    .group-total-label, .group-sum{text-decoration:none !important;border-bottom:none !important;padding-bottom:0}
+    .group-sum{display:inline-block}
+
+    .kpi-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:740px){.kpi-list{grid-template-columns:1fr}}
+    .kpi-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 10px 0}
+    .kpi-columns .col{font-size:0.85rem;font-weight:700;color:#111827;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;text-align:center}
+    @media (max-width:740px){.kpi-columns{grid-template-columns:1fr}}
+    .group-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+
+    .kpi-item{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;transition:background .12s ease;border:1px solid #e5e7eb;background:#fff;box-shadow:0 6px 14px rgba(15,23,42,0.04)}
+    .kpi-item:hover{background:var(--glass)}
+    .kpi-item{flex-wrap:wrap}
+    .kpi-item.kpi-area{border-color:#38bdf8;background:#f0f9ff}
+    .kpi-item.kpi-money{border-color:#34d399;background:#f0fdf4}
+    .kpi-item.kpi-area .name{color:#0369a1}
+    .kpi-item.kpi-money .name{color:#047857}
+
+    .kpi-label{flex:1;display:flex;align-items:center;gap:8px}
+    .kpi-label .name{font-weight:600}
+    .kpi-label .hint{font-size:0.85rem;color:var(--muted)}
+
+    .kpi-input{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    input[type=number]{width:90px;padding:8px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;transition:border-color .12s, box-shadow .12s}
+    .input-group{display:flex;align-items:center;gap:6px}
+    .input-label{font-size:0.8rem;color:var(--muted);min-width:64px}
+    .subitems{width:100%;margin-top:8px;border-top:1px dashed #e5e7eb;padding-top:8px}
+    .subitems-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .subitems-title{font-size:0.85rem;font-weight:600}
+    .subitems-columns{display:grid;grid-template-columns:2fr minmax(60px,80px) minmax(60px,80px) minmax(120px,1fr) auto;gap:6px;margin-bottom:6px;color:var(--muted);font-size:0.8rem}
+    .subitems-columns > div{text-align:center}
+    .subitems-columns > div:first-child{text-align:left}
+    @media (max-width:900px){
+      .subitems-columns{grid-template-columns:1fr minmax(60px,80px) minmax(60px,80px) minmax(100px,1fr) auto}
+    }
+    .subitems-list{display:flex;flex-direction:column;gap:6px}
+    .subitem-row{display:grid;grid-template-columns:2fr minmax(60px,80px) minmax(60px,80px) minmax(120px,1fr) auto;gap:6px;align-items:center}
+    .subitem-row input[type=text]{width:100%;padding:6px 8px;border-radius:8px;border:1px solid #e6e9ef;background:#fff}
+    .subitem-row input[type=number]{width:100%;padding:6px;border-radius:8px;border:1px solid #e6e9ef;background:#fff}
+    .readonly{background:#f3f4f6;color:#6b7280;cursor:not-allowed}
+    .subitem-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .subitem-row .small-btn.remove{width:32px;height:32px}
+    @media (max-width:900px){
+      .subitem-row{grid-template-columns:1fr minmax(60px,80px) minmax(60px,80px) minmax(100px,1fr) auto}
+    }
+    .subitem-bar{height:10px;background:#eef2ff;border-radius:999px;overflow:hidden;border:1px solid rgba(8,12,20,0.05)}
+    .subitem-bar span{display:block;height:100%;width:0%;background:var(--accent);transition:width .2s ease}
+    input[type=number]:focus{outline:none;border-color:var(--accent);box-shadow:0 6px 18px rgba(37,99,235,0.08)}
+    .percent{font-weight:600}
+    .error{color:var(--danger);font-size:0.85rem;margin-left:8px;display:none}
+
+    .small-btn{background:transparent;border:1px solid #e5e7eb;padding:6px;border-radius:8px;cursor:pointer}
+    .small-btn:hover{background:#fff}
+    .small-btn.remove{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:#f8fafc;border:1px solid rgba(8,12,20,0.04)}
+    .fixed .small-btn.remove{display:none}
+
+    /* progress */
+    .summary{display:flex;align-items:center;gap:16px;margin-top:18px;background:#fff;border-radius:10px;padding:12px;border:1px solid #eef2ff}
+    .progress-wrap{flex:1}
+    .progress{width:100%;height:18px;background:#eef2ff;border-radius:999px;overflow:hidden;border:1px solid rgba(8,12,20,0.03)}
+    .progress > span{display:block;height:100%;width:0%;background:var(--danger);transition:width .3s ease, background-color .3s ease}
+
+    .total{min-width:140px;text-align:right;font-weight:700}
+
+    /* warnings */
+    .warning{color:var(--danger);font-weight:700}
+    .ok{color:var(--success);font-weight:700}
+
+    /* animations */
+    .fade{transition:opacity .18s,transform .18s}
+
+    /* tooltip removed to reduce clutter */
+
+    footer{margin-top:18px;color:var(--muted);font-size:0.85rem}
+
+    /* helper utilities */
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="container" role="application">
+    <header>
+      <div class="title">
+        <h1>CÔNG TY TNHH HOÀN CẦU</h1>
+        <p class="lead">Chỉ tiêu phòng ban</p>
+      </div>
+      <div class="controls">
+        <div class="filter">
+          <label for="departmentFilter">Bộ lọc phòng ban</label>
+          <select id="departmentFilter" aria-label="Bộ lọc phòng ban">
+            <option value="all" selected>Tất cả</option>
+            <option value="group-clearance">Phòng Giải phóng mặt bằng</option>
+            <option value="group-room1">Phòng 1</option>
+            <option value="group-room2">Phòng 2</option>
+          </select>
+        </div>
+        <button id="saveBtn" title="Lưu cấu hình">Lưu cấu hình</button>
+        <button id="resetBtn" class="secondary" title="Reset về mặc định">Reset</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="top-cards" aria-label="Tổng quan">
+        <div class="metric-card">
+          <div class="metric-title">Đạt chỉ tiêu công ty</div>
+          <div class="metric-value" id="companyAchieved">0%</div>
+          <div class="metric-sub">Trung bình % đạt của các phòng</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-title">So sánh chỉ tiêu từng phòng</div>
+          <div class="compare-chart" id="departmentCompare"></div>
+        </div>
+      </section>
+      <section class="groups" aria-label="Phòng ban">
+        <!-- Phòng: Giải phóng mặt bằng -->
+        <div class="group" data-group="Phòng Giải phóng mặt bằng">
+          <div class="group-header">
+            <div>
+              <h3>PHÒNG GIẢI PHÓNG MẶT BẰNG</h3>
+              <p class="desc">Theo dõi diện tích và số tiền đã trả</p>
+            </div>
+            <div class="group-total" aria-hidden="false">
+              <div class="group-total-label">Tổng: <strong class="group-sum" id="sum-clearance">0</strong></div>
+            </div>
+          </div>
+          <div class="kpi-list" id="group-clearance"></div>
+          <div class="group-footer">
+            <div></div>
+            <div>
+              <button class="small-btn" data-reset-group="group-clearance">Khôi phục mặc định</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phòng 1 -->
+        <div class="group" data-group="Phòng 1">
+        <div class="group-header">
+          <div>
+            <h3>PHÒNG 1</h3>
+            <p class="desc">Theo dõi chỉ tiêu 1 và chỉ tiêu 2</p>
+          </div>
+          <div class="group-total">
+            <div class="group-total-label">Tổng: <strong class="group-sum" id="sum-room1">0</strong></div>
+          </div>
+        </div>
+          <div class="kpi-list" id="group-room1"></div>
+          <div class="group-footer">
+            <div></div>
+            <div>
+              <button class="small-btn" data-reset-group="group-room1">Khôi phục mặc định</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phòng 2 -->
+        <div class="group" data-group="Phòng 2">
+        <div class="group-header">
+          <div>
+            <h3>PHÒNG 2</h3>
+            <p class="desc">Theo dõi chỉ tiêu 1 và chỉ tiêu 2</p>
+          </div>
+          <div class="group-total">
+            <div class="group-total-label">Tổng: <strong class="group-sum" id="sum-room2">0</strong></div>
+          </div>
+        </div>
+          <div class="kpi-list" id="group-room2"></div>
+          <div class="group-footer">
+            <div></div>
+            <div>
+              <button class="small-btn" data-reset-group="group-room2">Khôi phục mặc định</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add a general list area if needed -->
+      </section>
+
+      <footer>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="muted">Tip: Chỉnh số để cập nhật doanh thu và diện tích.</div>
+          <div class="muted">Không cần backend — cấu hình lưu vào trình duyệt.</div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <template id="kpi-template">
+    <div class="kpi-item fade">
+      <div class="kpi-label">
+        <div>
+          <div class="name">__NAME__</div>
+          <div class="hint muted">__GROUP__</div>
+        </div>
+      </div>
+      <div class="kpi-input">
+        <div class="input-group">
+          <span class="input-label">Tỷ trọng</span>
+          <input class="weight-input" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal" aria-label="Tỷ trọng" />
+          <div class="percent">%</div>
+        </div>
+        <div class="input-group">
+          <span class="input-label">Đạt</span>
+          <input class="achieved-input" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal" aria-label="Tỷ lệ đạt" />
+          <div class="percent">%</div>
+        </div>
+        <div class="error" aria-live="polite">Giá trị phải từ 0 đến 100</div>
+        <button class="small-btn remove" title="Xóa">🗑</button>
+      </div>
+      <div class="subitems">
+        <div class="subitems-header">
+          <div class="subitems-title">Hạng mục</div>
+          <button class="small-btn" data-add-subitem>+ Thêm hạng mục</button>
+        </div>
+        <div class="subitems-columns" aria-hidden="true">
+          <div>Hạng mục</div>
+          <div>Tỷ trọng</div>
+          <div>Đạt</div>
+          <div></div>
+          <div></div>
+        </div>
+        <div class="subitems-list"></div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    /* ====== KPI Manager JS ======
+       - No backend required
+       - Uses localStorage key: kpi-config
+       - Easy to extend: add defaultKpis array or call addKPI(group, name, value)
+    ================================== */
+
+    const defaultSubitemsArea = [
+      {name:'KHU DC NINH THỦY', weight:12, achieved:92},
+      {name:'KĐT TMDV NAM VÂN PHONG', weight:8, achieved:47},
+      {name:'KĐT TMDV BẮC NINH HÒA', weight:10, achieved:63},
+      {name:'KĐT TMDV ĐÔNG BẮC NINH HÒA', weight:9, achieved:79},
+      {name:'KHU DC NINH LONG', weight:8, achieved:54},
+      {name:'KCN NINH DIÊM 3', weight:10, achieved:85},
+      {name:'KCN NINH DIÊM 2', weight:10, achieved:71},
+      {name:'KHAI THÁC MỎ KHOÁNG SẢN', weight:7, achieved:38},
+      {name:'NHÀ Ở XÃ HỘI HOÀN CẦU', weight:8, achieved:67},
+      {name:'KĐT DU LỊCH DỊCH VỤ QUỐC ANH', weight:8, achieved:58},
+      {name:'LÀM SỔ ĐẤT NGOÀI DỰ ÁN', weight:10, achieved:96}
+    ];
+    const defaultSubitemsMoney = [
+      {name:'KHU DC NINH THỦY', weight:10, achieved:78},
+      {name:'KĐT TMDV NAM VÂN PHONG', weight:9, achieved:62},
+      {name:'KĐT TMDV BẮC NINH HÒA', weight:8, achieved:55},
+      {name:'KĐT TMDV ĐÔNG BẮC NINH HÒA', weight:10, achieved:83},
+      {name:'KHU DC NINH LONG', weight:9, achieved:49},
+      {name:'KCN NINH DIÊM 3', weight:9, achieved:74},
+      {name:'KCN NINH DIÊM 2', weight:11, achieved:69},
+      {name:'KHAI THÁC MỎ KHOÁNG SẢN', weight:7, achieved:41},
+      {name:'NHÀ Ở XÃ HỘI HOÀN CẦU', weight:8, achieved:72},
+      {name:'KĐT DU LỊCH DỊCH VỤ QUỐC ANH', weight:9, achieved:57},
+      {name:'LÀM SỔ ĐẤT NGOÀI DỰ ÁN', weight:10, achieved:88}
+    ];
+
+    const defaultKpis = [
+      {group:'Phòng Giải phóng mặt bằng', name:'Diện tích', weight:55, achieved:0, hint:'Diện tích đã thực hiện', subitems:[...defaultSubitemsArea]},
+      {group:'Phòng Giải phóng mặt bằng', name:'Số tiền đã trả', weight:45, achieved:0, hint:'Tổng số tiền đã trả', subitems:[...defaultSubitemsMoney]},
+
+      {group:'Phòng 1', name:'Chỉ tiêu 1', weight:60, achieved:73, hint:'Chỉ tiêu 1', subitems:[]},
+      {group:'Phòng 1', name:'Chỉ tiêu 2', weight:40, achieved:59, hint:'Chỉ tiêu 2', subitems:[]},
+
+      {group:'Phòng 2', name:'Chỉ tiêu 1', weight:50, achieved:81, hint:'Chỉ tiêu 1', subitems:[]},
+      {group:'Phòng 2', name:'Chỉ tiêu 2', weight:50, achieved:66, hint:'Chỉ tiêu 2', subitems:[]}
+    ];
+
+    const STORAGE_KEY = 'kpi-config-v2';
+
+    // --- helper: create an item DOM from template ---
+    // Creates a KPI DOM node from data. Ensures inputs have accessible labels
+    // and wires up validation and removal handlers.
+    function createKpiElement({group, name, weight=0, achieved=0, hint='', subitems=[]}){
+      const tpl = document.getElementById('kpi-template');
+      const el = tpl.content.firstElementChild.cloneNode(true);
+      el.querySelector('.name').textContent = name;
+      el.querySelector('.hint').textContent = hint || group;
+      el.classList.add('fixed');
+      const lowerName = name.toLowerCase();
+      if (lowerName.includes('diện tích') || lowerName.includes('chỉ tiêu 1')) el.classList.add('kpi-area');
+      if (lowerName.includes('số tiền') || lowerName.includes('chỉ tiêu 2')) el.classList.add('kpi-money');
+      const weightInput = el.querySelector('.weight-input');
+      const achievedInput = el.querySelector('.achieved-input');
+      weightInput.value = weight;
+      achievedInput.value = achieved;
+      weightInput.setAttribute('aria-label', `Tỷ trọng ${name}`);
+      achievedInput.setAttribute('aria-label', `Tỷ lệ đạt ${name}`);
+      achievedInput.readOnly = true;
+      achievedInput.classList.add('readonly');
+
+      // optional bubble (removed in UI) - keep safe if template changes later
+      const bubble = el.querySelector('.bubble');
+      if (bubble) bubble.textContent = hint || 'Không có mô tả';
+
+      // handlers
+      weightInput.addEventListener('input', onInputChanged);
+      achievedInput.addEventListener('input', onInputChanged);
+      // sanitize and validate when focus is lost
+      weightInput.addEventListener('blur', () => sanitizeInput(weightInput));
+      achievedInput.addEventListener('blur', () => sanitizeInput(achievedInput));
+
+      // subitems
+      const subList = el.querySelector('.subitems-list');
+      const addSubBtn = el.querySelector('[data-add-subitem]');
+      addSubBtn.addEventListener('click', () => addSubitem(subList));
+      if (Array.isArray(subitems)){
+        subitems.forEach(s => addSubitem(subList, s));
+      }
+
+      // remove button
+      const removeBtn = el.querySelector('.remove');
+      // provide an accessible label for screen readers
+      removeBtn.setAttribute('aria-label', `Xóa chỉ tiêu ${name}`);
+      removeBtn.addEventListener('click', () => {
+        el.remove();
+        updateTotals();
+      });
+
+      // keyboard support: press Del while an input inside the item is focused -> remove
+      el.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Delete') {
+          removeBtn.click();
+        }
+      });
+
+      return el;
+    }
+
+    function addSubitem(container, data){
+      const row = document.createElement('div');
+      row.className = 'subitem-row';
+      row.innerHTML = `
+        <input type="text" class="subitem-name" placeholder="Tên hạng mục" />
+        <input type="number" class="subitem-weight" min="0" max="100" step="0.1" value="0" />
+        <input type="number" class="subitem-achieved" min="0" max="100" step="0.1" value="0" />
+        <div class="subitem-bar"><span></span></div>
+        <button class="small-btn remove" title="Xóa">🗑</button>
+      `;
+      const nameInput = row.querySelector('.subitem-name');
+      const weightInput = row.querySelector('.subitem-weight');
+      const achievedInput = row.querySelector('.subitem-achieved');
+      if (data){
+        nameInput.value = data.name || '';
+        weightInput.value = data.weight ?? 0;
+        achievedInput.value = data.achieved ?? 0;
+      }
+      nameInput.addEventListener('input', onInputChanged);
+      weightInput.addEventListener('input', onInputChanged);
+      achievedInput.addEventListener('input', onInputChanged);
+      achievedInput.readOnly = true;
+      achievedInput.classList.add('readonly');
+      weightInput.addEventListener('blur', () => sanitizeInput(weightInput));
+      achievedInput.addEventListener('blur', () => sanitizeInput(achievedInput));
+      row.querySelector('.remove').addEventListener('click', () => {
+        row.remove();
+        updateTotals();
+      });
+      updateSubitemBar(row);
+      container.appendChild(row);
+      updateTotals();
+    }
+
+    function updateSubitemBar(row){
+      const achieved = parseFloat(row.querySelector('.subitem-achieved')?.value);
+      const bar = row.querySelector('.subitem-bar span');
+      if (!bar) return;
+      const pct = Number.isNaN(achieved) ? 0 : Math.max(0, Math.min(100, achieved));
+      bar.style.width = pct + '%';
+      if (pct < 50){
+        bar.style.background = '#ef4444';
+      } else if (pct <= 80){
+        bar.style.background = '#f59e0b';
+      } else {
+        bar.style.background = '#10b981';
+      }
+    }
+
+    // --- add a KPI to a group container ---
+    function addKpi(groupId, kpi){
+      const container = document.getElementById(groupId);
+      const el = createKpiElement(kpi);
+      container.appendChild(el);
+      updateTotals();
+      // focus the new input
+      el.querySelector('.weight-input').focus();
+    }
+
+    // sanitize input (ensure 0-100, fix decimals) and show/hide error message
+    function sanitizeInput(input){
+      let v = parseFloat(input.value);
+      const error = input.closest('.kpi-input')?.querySelector('.error');
+      if (Number.isNaN(v)) v = 0;
+      if (v < 0 || v > 100){
+        // invalid - show error message and keep the value clamped but flagged
+        error.style.display = 'inline-block';
+        input.style.borderColor = 'var(--danger)';
+      } else {
+        error.style.display = 'none';
+        input.style.borderColor = '';
+      }
+      v = Math.max(0, Math.min(100, v));
+      // round to 2 decimals to keep UI tidy
+      input.value = Math.round(v * 100) / 100;
+      updateTotals();
+    }
+
+    // on input change, update totals live and validate
+    // show immediate inline validation as user types
+    function onInputChanged(e){
+      const input = e.target;
+      // immediate clamp if outside
+      if (input.value !== ''){
+        const v = parseFloat(input.value);
+        const error = input.closest('.kpi-input')?.querySelector('.error');
+        if (!Number.isNaN(v) && (v < 0 || v > 100)){
+          input.style.borderColor = '#ef4444';
+          if (error) error.style.display = 'inline-block';
+        } else {
+          input.style.borderColor = '';
+          if (error) error.style.display = 'none';
+        }
+      }
+      const row = input.closest('.subitem-row');
+      if (row) updateSubitemBar(row);
+      updateTotals();
+    }
+
+    function computeKpiAchieved(item){
+      const rows = item.querySelectorAll('.subitem-row');
+      if (!rows.length) return null;
+      let sum = 0;
+      rows.forEach(row => {
+        const w = parseFloat(row.querySelector('.subitem-weight')?.value);
+        const a = parseFloat(row.querySelector('.subitem-achieved')?.value);
+        if (!Number.isNaN(w) && !Number.isNaN(a)) sum += (w * a) / 100;
+      });
+      return Math.round(sum * 100) / 100;
+    }
+
+    // compute sum of all kpi inputs
+    function getTotalAchieved(){
+      const items = document.querySelectorAll('.kpi-item');
+      let sum = 0;
+      items.forEach(item => {
+        const w = parseFloat(item.querySelector('.weight-input')?.value);
+        let a = parseFloat(item.querySelector('.achieved-input')?.value);
+        const computed = computeKpiAchieved(item);
+        if (computed !== null){
+          a = computed;
+          const achievedInput = item.querySelector('.achieved-input');
+          achievedInput.value = a;
+          achievedInput.setAttribute('readonly', 'readonly');
+        } else {
+          item.querySelector('.achieved-input')?.removeAttribute('readonly');
+        }
+        if (!Number.isNaN(w) && !Number.isNaN(a)) sum += (w * a) / 100;
+      });
+      return Math.round(sum * 100) / 100;
+    }
+
+    // update progress bar and warning text
+    function updateTotals(){
+      const total = getTotalAchieved();
+      const bar = document.getElementById('progressBar');
+      if (bar) {
+        bar.style.width = Math.min(100, Math.max(0, total)) + '%';
+        bar.style.background = 'var(--accent)';
+      }
+
+      const totalText = document.getElementById('totalText');
+      if (totalText) {
+        const summaryMsg = totalText.querySelector('div');
+        if (summaryMsg) summaryMsg.textContent = 'Không ràng buộc tổng';
+        totalText.classList.remove('ok','warning');
+        totalText.firstChild.textContent = total + '% ';
+        // Accessibility: announce non-100 total
+        totalText.setAttribute('aria-hidden', 'false');
+      }
+
+      // update per-group totals and progress
+      updateGroupTotals();
+
+      // update company average and compare chart
+      updateCompanyAndCompare();
+    }
+
+    function updateCompanyAndCompare(){
+      const groups = [
+        {id:'group-clearance', label:'GPMB'},
+        {id:'group-room1', label:'Phòng 1'},
+        {id:'group-room2', label:'Phòng 2'}
+      ];
+      const values = groups.map(g => {
+        const list = document.getElementById(g.id);
+        if (!list) return {label:g.label, value:0};
+        const items = list.querySelectorAll('.kpi-item');
+        let sum = 0;
+        items.forEach(item => {
+          const w = parseFloat(item.querySelector('.weight-input')?.value);
+          let a = parseFloat(item.querySelector('.achieved-input')?.value);
+          const computed = computeKpiAchieved(item);
+          if (computed !== null) a = computed;
+          if (!Number.isNaN(w) && !Number.isNaN(a)) sum += (w * a) / 100;
+        });
+        return {label:g.label, value:Math.round(sum * 100) / 100};
+      });
+
+      const avg = values.length
+        ? Math.round((values.reduce((s, v) => s + v.value, 0) / values.length) * 100) / 100
+        : 0;
+      const companyEl = document.getElementById('companyAchieved');
+      if (companyEl) companyEl.textContent = avg + '%';
+
+      const compare = document.getElementById('departmentCompare');
+      if (!compare) return;
+      compare.innerHTML = '';
+      values.forEach(v => {
+        const row = document.createElement('div');
+        row.className = 'compare-row';
+        row.innerHTML = `
+          <div>${v.label}</div>
+          <div class="compare-bar"><span style="width:${Math.min(100, Math.max(0, v.value))}%"></span></div>
+          <div>${v.value}%</div>
+        `;
+        compare.appendChild(row);
+      });
+    }
+
+    // compute and display sums for each group and update group progress bars
+    function updateGroupTotals(){
+      const groups = ['group-clearance','group-room1','group-room2'];
+      groups.forEach(id => {
+        const list = document.getElementById(id);
+        if (!list) return;
+        const items = list.querySelectorAll('.kpi-item');
+        let sum = 0;
+        items.forEach(item => {
+          const w = parseFloat(item.querySelector('.weight-input')?.value);
+          let a = parseFloat(item.querySelector('.achieved-input')?.value);
+          const computed = computeKpiAchieved(item);
+          if (computed !== null){
+            a = computed;
+            const achievedInput = item.querySelector('.achieved-input');
+            achievedInput.value = a;
+            achievedInput.setAttribute('readonly', 'readonly');
+          } else {
+            item.querySelector('.achieved-input')?.removeAttribute('readonly');
+          }
+          if (!Number.isNaN(w) && !Number.isNaN(a)) sum += (w * a) / 100;
+        });
+        sum = Math.round(sum * 100) / 100;
+
+        // update label
+        const short = id.split('-')[1];
+        const sumEl = document.getElementById('sum-' + short);
+        if (sumEl) sumEl.textContent = sum + '%';
+
+        // per-group progress bars removed — only numeric sums are shown
+
+        // set warning/ok classes
+        sumEl && sumEl.classList.remove('warning','ok');
+      });
+    }
+
+    // Reset to defaults
+    function resetToDefault(){
+      if (!confirm('Bạn có chắc muốn reset về mặc định?')) return;
+      clearAll();
+      defaultKpis.forEach(k => {
+        const id = groupIdFor(k.group);
+        addKpi(id, k);
+      });
+      updateTotals();
+      saveConfig();
+    }
+
+    // Remove all kpis from UI
+    function clearAll(){
+      document.querySelectorAll('.kpi-list').forEach(list => list.innerHTML = '');
+    }
+
+    // Save current configuration to localStorage
+    function saveConfig(){
+      const data = [];
+      document.querySelectorAll('.kpi-list').forEach(list =>{
+        const groupId = list.id;
+        const groupName = groupNameForId(groupId);
+        list.querySelectorAll('.kpi-item').forEach(item =>{
+          const name = item.querySelector('.name').textContent;
+          const hint = item.querySelector('.hint').textContent;
+          const weight = parseFloat(item.querySelector('.weight-input').value) || 0;
+          const achieved = parseFloat(item.querySelector('.achieved-input').value) || 0;
+          const subitems = Array.from(item.querySelectorAll('.subitem-row')).map(row => ({
+            name: row.querySelector('.subitem-name')?.value || '',
+            weight: parseFloat(row.querySelector('.subitem-weight')?.value) || 0,
+            achieved: parseFloat(row.querySelector('.subitem-achieved')?.value) || 0
+          }));
+          data.push({group:groupName,name,hint,weight,achieved,subitems});
+        });
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      flashSaved();
+    }
+
+    // Load configuration from localStorage; if none, load defaults
+    function loadConfig(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      let data = null;
+      try{ data = raw ? JSON.parse(raw) : null } catch(e){ data = null }
+      clearAll();
+      if (Array.isArray(data) && data.length){
+        data.forEach(k=>{
+          const id = groupIdFor(k.group);
+          addKpi(id, k);
+        })
+      } else {
+        // seed defaults
+        defaultKpis.forEach(k => addKpi(groupIdFor(k.group), k));
+      }
+      updateTotals();
+    }
+
+    // flash animation when saved
+    function flashSaved(){
+      const btn = document.getElementById('saveBtn');
+      const old = btn.textContent;
+      btn.textContent = 'Đã lưu ✓';
+      btn.style.background = 'linear-gradient(90deg,var(--success),#059669)';
+      setTimeout(()=>{ btn.textContent = old; btn.style.background = ''; },1200);
+    }
+
+    // map group names to container ids
+    function groupIdFor(groupName){
+      if (groupName === 'Phòng Giải phóng mặt bằng') return 'group-clearance';
+      if (groupName === 'Phòng 1') return 'group-room1';
+      if (groupName === 'Phòng 2') return 'group-room2';
+      return 'group-clearance';
+    }
+    function groupNameForId(id){
+      if (id === 'group-clearance') return 'Phòng Giải phóng mặt bằng';
+      if (id === 'group-room1') return 'Phòng 1';
+      if (id === 'group-room2') return 'Phòng 2';
+      return id;
+    }
+
+    // add simple dialog to add KPI dynamically
+    function resetGroup(targetId){
+      const groupName = groupNameForId(targetId);
+      const defaults = defaultKpis.filter(k => k.group === groupName);
+      if (!defaults.length) return;
+      const list = document.getElementById(targetId);
+      list.innerHTML = '';
+      defaults.forEach(k => addKpi(targetId, k));
+      updateTotals();
+    }
+
+    // wire up buttons and actions
+    function applyDepartmentFilter(){
+      const value = document.getElementById('departmentFilter').value;
+      document.querySelectorAll('.group').forEach(group => {
+        const list = group.querySelector('.kpi-list');
+        if (!list) return;
+        const show = value === 'all' || list.id === value;
+        group.style.display = show ? '' : 'none';
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // initial load
+      loadConfig();
+
+      document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+      document.getElementById('saveBtn').addEventListener('click', saveConfig);
+
+      document.getElementById('departmentFilter').addEventListener('change', applyDepartmentFilter);
+      applyDepartmentFilter();
+
+      // reset group buttons
+      document.querySelectorAll('[data-reset-group]').forEach(btn => {
+        btn.addEventListener('click', ()=>{
+          const id = btn.getAttribute('data-reset-group');
+          resetGroup(id);
+        });
+      });
+
+      // quick save on Ctrl+S
+      window.addEventListener('keydown', (e)=>{
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){
+          e.preventDefault(); saveConfig();
+        }
+      });
+
+      // Accessibility: ensure total updates periodically in case of programmatic changes
+      setInterval(updateTotals, 800);
+    });
+
+    // Expose some functions for developer console or extension
+    window.KPI = {
+      addKpi, saveConfig, loadConfig, resetToDefault, getTotalAchieved
+    };
+  </script>
+</body>
+</html>
